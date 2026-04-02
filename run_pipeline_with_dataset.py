@@ -30,7 +30,9 @@ Note: This script does NOT run the DiffMS model. "Original" = retrieval-only;
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import random
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -178,6 +180,63 @@ def evaluate_flows(
     )
 
 
+def export_top5_predictions(
+    dataset_root: str | Path,
+    out_path: str | Path,
+    split: str = "train",
+    max_samples: int | None = None,
+    k: int = 5,
+    similarity_metric: str = "cosine",
+    seed: int = 0,
+) -> int:
+    """
+    Export deterministic top-k predictions as JSONL for downstream tokenization/training.
+    Each line schema:
+      {
+        "sample_id": int,
+        "split": str,
+        "gt_smiles": str,
+        "top5_candidates": [{"rank": int, "pred_smiles": str, "moonshot_score": float}]
+      }
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+
+    loader = MoonshotDataLoader(dataset_root)
+    samples = loader.get_samples(split=split, max_samples=max_samples)
+    retrieval_fps = precompute_fingerprints(loader.get_retrieval_smiles())
+
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    rows = 0
+    with out_path.open("w", encoding="utf-8") as f:
+        for s in samples:
+            topk = run_original_flow(
+                loader,
+                s.smiles,
+                k=k,
+                retrieval_fps=retrieval_fps,
+                similarity_metric=similarity_metric,
+            )
+            payload = {
+                "sample_id": int(s.idx),
+                "split": s.split,
+                "gt_smiles": s.smiles,
+                "top5_candidates": [
+                    {
+                        "rank": i + 1,
+                        "pred_smiles": smiles,
+                        "moonshot_score": float(score),
+                    }
+                    for i, (smiles, score) in enumerate(topk)
+                ],
+            }
+            f.write(json.dumps(payload) + "\n")
+            rows += 1
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Run pipeline on MoonshotDatasetv3: original vs developed flow, report accuracy."
@@ -230,6 +289,23 @@ def main():
         action="store_true",
         help="Run on one random molecule from the split; report hit/miss and optionally --plot-example",
     )
+    parser.add_argument(
+        "--export-top5",
+        action="store_true",
+        help="Export top-k predictions to JSONL for downstream HIGHT/DiffMS pipeline",
+    )
+    parser.add_argument(
+        "--export-path",
+        type=str,
+        default="artifacts/moonshot_top5.jsonl",
+        help="Path for --export-top5 output JSONL",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="Random seed used for deterministic export/eval order",
+    )
     args = parser.parse_args()
 
     dataset_root = Path(args.dataset_root)
@@ -241,6 +317,19 @@ def main():
     loader = MoonshotDataLoader(dataset_root)
     samples_all = loader.get_samples(split=args.split, max_samples=None)
     n_samples = len(samples_all)
+
+    if args.export_top5:
+        rows = export_top5_predictions(
+            dataset_root=dataset_root,
+            out_path=args.export_path,
+            split=args.split,
+            max_samples=args.max_samples if args.max_samples > 0 else None,
+            k=args.k,
+            similarity_metric=args.similarity,
+            seed=args.seed,
+        )
+        print(f"Exported {rows} rows to {args.export_path}")
+        return 0
 
     if args.single_random:
         # One random molecule per run: test on it and report hit/miss

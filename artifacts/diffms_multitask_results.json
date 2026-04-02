@@ -1,0 +1,62 @@
+{
+  "baseline": {
+    "val_loss_mean": 0.297570311360889,
+    "val_loss_std": 0.023329653584314818,
+    "val_acc_mean": 1.0,
+    "val_acc_std": 0.0,
+    "per_seed": [
+      {
+        "val_loss": 0.32948969801266986,
+        "val_acc": 1.0
+      },
+      {
+        "val_loss": 0.2888406713803609,
+        "val_acc": 1.0
+      },
+      {
+        "val_loss": 0.27438056468963623,
+        "val_acc": 1.0
+      }
+    ]
+  },
+  "multi_task_hight": {
+    "val_loss_mean": 0.3502026829454634,
+    "val_loss_std": 0.023698592190214005,
+    "val_acc_mean": 1.0,
+    "val_acc_std": 0.0,
+    "per_seed": [
+      {
+        "val_loss": 0.3831132451693217,
+        "val_acc": 1.0
+      },
+      {
+        "val_loss": 0.3392343024412791,
+        "val_acc": 1.0
+      },
+      {
+        "val_loss": 0.32826050122578937,
+        "val_acc": 1.0
+      }
+    ]
+  },
+  "shuffled_top5": {
+    "val_loss_mean": 0.35142454836103654,
+    "val_loss_std": 0.023092150537191443,
+    "val_acc_mean": 1.0,
+    "val_acc_std": 0.0,
+    "per_seed": [
+      {
+        "val_loss": 0.3833656807740529,
+        "val_acc": 1.0
+      },
+      {
+        "val_loss": 0.341344157854716,
+        "val_acc": 1.0
+      },
+      {
+        "val_loss": 0.32956380645434064,
+        "val_acc": 1.0
+      }
+    ]
+  }
+}

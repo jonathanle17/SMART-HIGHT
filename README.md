@@ -189,3 +189,111 @@ This is the final representation you want before calling any LLM code.
 - **You only want the pipeline without LapPE**
   - Run with `--no-lap-pe`
 
+---
+
+### Moonshot -> HIGHT -> DiffMS experiment pipeline
+
+This repo now includes an end-to-end bridge for your three-repo workflow:
+
+- SMART-Moonshot top-5 candidate export
+- HIGHT-style graph tokenization for candidates
+- DiffMS-oriented multi-task training/evaluation (baseline vs token-augmented vs shuffled control)
+
+#### 1) Export top-5 predictions from Moonshot-style retrieval
+
+```powershell
+.\.venv-312\Scripts\python.exe .\run_pipeline_with_dataset.py `
+  --dataset-root "C:\Users\andre\Downloads\MoonshotDatasetv3.zip" `
+  --split train `
+  --max-samples 200 `
+  --k 5 `
+  --similarity cosine `
+  --export-top5 `
+  --export-path ".\artifacts\moonshot_top5_train.jsonl" `
+  --seed 0
+```
+
+Repeat for `val` and `test` splits (change `--split` and output filename).
+
+#### 2) Build HIGHT-tokenized bridge dataset
+
+```powershell
+.\.venv-312\Scripts\python.exe .\build_diffms_training_set.py `
+  --moonshot-top5-jsonl ".\artifacts\moonshot_top5_train.jsonl" `
+  --out-jsonl ".\artifacts\diffms_bridge_train.jsonl" `
+  --out-npz ".\artifacts\diffms_bridge_train_tokens.npz" `
+  --hidden-dim 128
+```
+
+If real HIGHT is wired and checkpoint is available, add:
+
+```powershell
+--hight-checkpoint "C:\path\to\hight_checkpoint.pt"
+```
+
+#### 3) Train/evaluate baseline vs multi-task vs shuffled control
+
+Merge split artifacts first:
+
+```powershell
+.\.venv-312\Scripts\python.exe .\merge_bridge_artifacts.py `
+  --train-jsonl ".\artifacts\diffms_bridge_train.jsonl" `
+  --train-npz ".\artifacts\diffms_bridge_train_tokens.npz" `
+  --val-jsonl ".\artifacts\diffms_bridge_val.jsonl" `
+  --val-npz ".\artifacts\diffms_bridge_val_tokens.npz" `
+  --out-jsonl ".\artifacts\diffms_bridge_all.jsonl" `
+  --out-npz ".\artifacts\diffms_bridge_all_tokens.npz"
+```
+
+Then train/evaluate:
+
+```powershell
+.\.venv-312\Scripts\python.exe .\train_diffms_multitask.py `
+  --meta-jsonl ".\artifacts\diffms_bridge_all.jsonl" `
+  --token-npz ".\artifacts\diffms_bridge_all_tokens.npz" `
+  --out-json ".\artifacts\diffms_multitask_results.json" `
+  --seeds 0 1 2 `
+  --epochs 5 `
+  --aux-weight 0.2
+```
+
+This runs:
+
+- `baseline`
+- `multi_task_hight`
+- `shuffled_top5` (sanity control)
+
+and writes mean/std + per-seed metrics to `diffms_multitask_results.json`.
+
+---
+
+### Direct DiffMS internal training (true DiffMS metrics)
+
+The scripts below run **inside your local DiffMS clone** (`C:/Users/andre/DiffMS`) using the native DiffMS training/eval stack, with a conditioning switch:
+
+- `baseline`
+- `hight_augmented`
+- `hight_shuffled` (control)
+
+Run:
+
+```powershell
+.\.venv-312\Scripts\python.exe .\run_true_diffms_comparison.py `
+  --diffms-root "C:\Users\andre\DiffMS" `
+  --bridge-jsonl "C:\Users\andre\SMART-HIGHT\artifacts\diffms_bridge_all.jsonl" `
+  --bridge-npz "C:\Users\andre\SMART-HIGHT\artifacts\diffms_bridge_all_tokens.npz" `
+  --dataset msg `
+  --seeds 0 1 2 `
+  --epochs 1 `
+  --max-count 64 `
+  --out-json ".\artifacts\true_diffms_comparison.json"
+```
+
+Then summarize percentage deltas:
+
+```powershell
+.\.venv-312\Scripts\python.exe .\summarize_true_diffms_comparison.py `
+  --runs-json ".\artifacts\true_diffms_comparison.json" `
+  --out-json ".\artifacts\true_diffms_comparison_summary.json"
+```
+
