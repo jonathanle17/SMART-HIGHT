@@ -1,0 +1,26 @@
+[
+  {
+    "seed": 0,
+    "mode": "baseline",
+    "return_code": 3221225477,
+    "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_baseline_s0",
+    "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_baseline_s0\\logs\\moonshot_baseline_s0\\moonshot_baseline_s0\\version_0\\metrics.csv",
+    "metrics": {}
+  },
+  {
+    "seed": 0,
+    "mode": "hight_augmented",
+    "return_code": 3221225477,
+    "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_augmented_s0",
+    "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_augmented_s0\\logs\\moonshot_hight_augmented_s0\\moonshot_hight_augmented_s0\\version_0\\metrics.csv",
+    "metrics": {}
+  },
+  {
+    "seed": 0,
+    "mode": "hight_shuffled",
+    "return_code": 120,
+    "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_shuffled_s0",
+    "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_shuffled_s0\\logs\\moonshot_hight_shuffled_s0\\moonshot_hight_shuffled_s0\\version_0\\metrics.csv",
+    "metrics": {}
+  }
+]
