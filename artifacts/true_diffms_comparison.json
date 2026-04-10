@@ -2,7 +2,7 @@
   {
     "seed": 0,
     "mode": "baseline",
-    "return_code": 3221225477,
+    "return_code": 1,
     "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_baseline_s0",
     "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_baseline_s0\\logs\\moonshot_baseline_s0\\moonshot_baseline_s0\\version_0\\metrics.csv",
     "metrics": {}
@@ -10,7 +10,7 @@
   {
     "seed": 0,
     "mode": "hight_augmented",
-    "return_code": 3221225477,
+    "return_code": 1,
     "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_augmented_s0",
     "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_augmented_s0\\logs\\moonshot_hight_augmented_s0\\moonshot_hight_augmented_s0\\version_0\\metrics.csv",
     "metrics": {}
@@ -18,9 +18,57 @@
   {
     "seed": 0,
     "mode": "hight_shuffled",
-    "return_code": 120,
+    "return_code": 1,
     "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_shuffled_s0",
     "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_shuffled_s0\\logs\\moonshot_hight_shuffled_s0\\moonshot_hight_shuffled_s0\\version_0\\metrics.csv",
+    "metrics": {}
+  },
+  {
+    "seed": 1,
+    "mode": "baseline",
+    "return_code": 1,
+    "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_baseline_s1",
+    "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_baseline_s1\\logs\\moonshot_baseline_s1\\moonshot_baseline_s1\\version_0\\metrics.csv",
+    "metrics": {}
+  },
+  {
+    "seed": 1,
+    "mode": "hight_augmented",
+    "return_code": 1,
+    "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_augmented_s1",
+    "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_augmented_s1\\logs\\moonshot_hight_augmented_s1\\moonshot_hight_augmented_s1\\version_0\\metrics.csv",
+    "metrics": {}
+  },
+  {
+    "seed": 1,
+    "mode": "hight_shuffled",
+    "return_code": 1,
+    "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_shuffled_s1",
+    "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_shuffled_s1\\logs\\moonshot_hight_shuffled_s1\\moonshot_hight_shuffled_s1\\version_0\\metrics.csv",
+    "metrics": {}
+  },
+  {
+    "seed": 2,
+    "mode": "baseline",
+    "return_code": 1,
+    "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_baseline_s2",
+    "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_baseline_s2\\logs\\moonshot_baseline_s2\\moonshot_baseline_s2\\version_0\\metrics.csv",
+    "metrics": {}
+  },
+  {
+    "seed": 2,
+    "mode": "hight_augmented",
+    "return_code": 1,
+    "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_augmented_s2",
+    "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_augmented_s2\\logs\\moonshot_hight_augmented_s2\\moonshot_hight_augmented_s2\\version_0\\metrics.csv",
+    "metrics": {}
+  },
+  {
+    "seed": 2,
+    "mode": "hight_shuffled",
+    "return_code": 1,
+    "run_dir": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_shuffled_s2",
+    "metrics_csv": "C:\\Users\\andre\\DiffMS\\outputs\\moonshot_compare\\moonshot_hight_shuffled_s2\\logs\\moonshot_hight_shuffled_s2\\moonshot_hight_shuffled_s2\\version_0\\metrics.csv",
     "metrics": {}
   }
 ]
