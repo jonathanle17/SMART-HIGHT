@@ -38,10 +38,13 @@ def _run_one(
     bridge_jsonl: Path,
     bridge_npz: Path,
     n_epochs: int,
-    max_count: int,
+    max_count: int | None,
     dataset_rel_base: str | None,
     test_samples: int,
     val_samples: int,
+    gpus: int,
+    progress_bar: bool,
+    hydra_extra: list[str],
 ) -> tuple[int, Path]:
     run_dir = diffms_root / "outputs" / "moonshot_compare" / run_name
     cmd = [
@@ -50,20 +53,25 @@ def _run_one(
         "src.spec2mol_main",
         f"general.name={run_name}",
         "general.wandb=disabled",
-        "general.gpus=0",
+        f"general.gpus={gpus}",
         f"dataset={dataset_name}",
-        f"dataset.max_count={max_count}",
-        f"dataset.conditioning_mode={mode}",
-        f"dataset.hight_bridge_jsonl={bridge_jsonl.as_posix()}",
-        f"dataset.hight_bridge_npz={bridge_npz.as_posix()}",
-        "dataset.hight_fusion=add",
-        f"train.n_epochs={n_epochs}",
-        f"train.seed={seed}",
-        "train.num_workers=0",
-        f"general.test_samples_to_generate={test_samples}",
-        f"general.val_samples_to_generate={val_samples}",
-        "hydra.run.dir=outputs/moonshot_compare/${general.name}",
     ]
+    if max_count is not None:
+        cmd.append(f"dataset.max_count={max_count}")
+    cmd.extend(
+        [
+            f"dataset.conditioning_mode={mode}",
+            f"dataset.hight_bridge_jsonl={bridge_jsonl.as_posix()}",
+            f"dataset.hight_bridge_npz={bridge_npz.as_posix()}",
+            "dataset.hight_fusion=add",
+            f"train.n_epochs={n_epochs}",
+            f"train.seed={seed}",
+            "train.num_workers=0",
+            f"general.test_samples_to_generate={test_samples}",
+            f"general.val_samples_to_generate={val_samples}",
+            "hydra.run.dir=outputs/moonshot_compare/${general.name}",
+        ]
+    )
     # Hydra job cwd is outputs/.../<run_name>; configs use ../../../ to reach repo root.
     if dataset_rel_base:
         rel = dataset_rel_base.replace("\\", "/").strip("/")
@@ -76,6 +84,9 @@ def _run_one(
                 f"dataset.subform_folder=../../../{rel}/subformulae/default_subformulae",
             ]
         )
+    if progress_bar:
+        cmd.append("train.progress_bar=true")
+    cmd.extend(hydra_extra)
     env = dict(os.environ)
     env.setdefault("PYTHONUTF8", "1")
     env.setdefault("PYTHONIOENCODING", "utf-8")
@@ -101,7 +112,13 @@ def main() -> int:
     parser.add_argument("--dataset", type=str, default="msg", choices=["msg", "canopus"])
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     parser.add_argument("--epochs", type=int, default=1)
-    parser.add_argument("--max-count", type=int, default=64)
+    parser.add_argument(
+        "--max-count",
+        type=int,
+        default=None,
+        help="Cap spectra loaded (first N paths from spec_folder glob). "
+        "Too small can leave val/test empty and crash. Default: no cap (msg.yaml null).",
+    )
     parser.add_argument("--out-json", type=str, default="artifacts/true_diffms_comparison.json")
     parser.add_argument(
         "--dataset-rel-base",
@@ -127,6 +144,24 @@ def main() -> int:
         default=20,
         help="DiffMS molecules to sample per example during val sampling steps.",
     )
+    parser.add_argument(
+        "--gpus",
+        type=int,
+        default=0,
+        help="Number of GPUs for DiffMS (general.gpus). Requires CUDA torch; 0 = CPU.",
+    )
+    parser.add_argument(
+        "--progress-bar",
+        action="store_true",
+        help="Turn on Lightning tqdm (train.progress_bar=true). Needs DiffMS Trainer wired to cfg.train.progress_bar.",
+    )
+    parser.add_argument(
+        "--hydra",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Extra Hydra overrides (repeatable), e.g. --hydra train.log_every_n_steps=10",
+    )
     args = parser.parse_args()
 
     python_exe = args.python or sys.executable
@@ -146,6 +181,24 @@ def main() -> int:
         if chk.stderr:
             print(chk.stderr, file=sys.stderr)
         return 1
+
+    if args.gpus > 0:
+        cuda_chk = subprocess.run(
+            [
+                python_exe,
+                "-c",
+                "import torch; raise SystemExit(0 if torch.cuda.is_available() else 1)",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if cuda_chk.returncode != 0:
+            print(
+                "You passed --gpus > 0 but torch.cuda.is_available() is False.\n"
+                "Install a CUDA build of PyTorch and NVIDIA drivers, or use --gpus 0.",
+                file=sys.stderr,
+            )
+            return 1
 
     diffms_root = Path(args.diffms_root)
     # Hydra cwd is under DiffMS outputs; relative paths must be absolute.
@@ -174,6 +227,9 @@ def main() -> int:
                 dataset_rel_base=ds_override,
                 test_samples=args.test_samples,
                 val_samples=args.val_samples,
+                gpus=args.gpus,
+                progress_bar=args.progress_bar,
+                hydra_extra=list(args.hydra),
             )
             metrics_csv = run_dir / "logs" / run_name / run_name / "version_0" / "metrics.csv"
             if not metrics_csv.exists():
