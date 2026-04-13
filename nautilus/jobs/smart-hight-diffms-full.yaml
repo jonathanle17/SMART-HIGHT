@@ -1,0 +1,94 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: andre-smart-hight-diffms-full
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 259200
+  template:
+    spec:
+      serviceAccountName: default
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: trainer
+          image: gitlab-registry.nrp-nautilus.io/a8tong/smart-moonshot/pixi-cuda:12.8
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          command: ["/bin/bash", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              if [ -d /root/gurusmart/.ssh ]; then
+                mkdir -p ~/.ssh
+                cp -f /root/gurusmart/.ssh/id_rsa ~/.ssh/id_rsa || true
+                cp -f /root/gurusmart/.ssh/id_rsa.pub ~/.ssh/id_rsa.pub || true
+                chmod 600 ~/.ssh/id_rsa || true
+              fi
+              if [ ! -d /code/SMART-HIGHT ]; then
+                export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
+                git clone --branch "${SMART_HIGHT_BRANCH}" "${SMART_HIGHT_REPO}" /code/SMART-HIGHT
+              fi
+              bash /code/SMART-HIGHT/nautilus/scripts/run_smart_hight_diffms_pipeline.sh
+          env:
+            - name: PIPELINE_MODE
+              value: full
+            - name: MOONSHOT_DATASET_ZIP
+              value: MoonshotDatasetv3.zip
+            - name: SMART_HIGHT_REPO
+              value: git@github.com:jonathanle17/SMART-HIGHT.git
+            - name: SMART_HIGHT_BRANCH
+              value: main
+            - name: DIFFMS_REPO
+              value: https://github.com/coleygroup/DiffMS.git
+            - name: DIFFMS_BRANCH
+              value: master
+            - name: PYTHON_BIN
+              value: python
+            - name: GPU_COUNT
+              value: "2"
+            - name: ARTIFACT_ROOT
+              value: /root/gurusmart/experiments
+          resources:
+            limits:
+              memory: 64Gi
+              cpu: "16"
+              nvidia.com/gpu: "2"
+              ephemeral-storage: 600Gi
+            requests:
+              memory: 64Gi
+              cpu: "16"
+              nvidia.com/gpu: "2"
+              ephemeral-storage: 600Gi
+          volumeMounts:
+            - mountPath: /root/gurusmart
+              name: user-pvc
+            - mountPath: /root/datasets
+              name: smart-datasets
+            - mountPath: /workspace
+              name: data-unzip
+            - mountPath: /dev/shm
+              name: dshm
+            - mountPath: /code
+              name: code-workdir
+      volumes:
+        - name: user-pvc
+          persistentVolumeClaim:
+            claimName: andre-smart-hight-pvc
+        - name: smart-datasets
+          persistentVolumeClaim:
+            claimName: smart-datasets
+        - name: dshm
+          emptyDir:
+            medium: Memory
+        - name: data-unzip
+          emptyDir: {}
+        - name: code-workdir
+          emptyDir: {}
