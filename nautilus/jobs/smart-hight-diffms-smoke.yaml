@@ -7,6 +7,11 @@ spec:
   ttlSecondsAfterFinished: 86400
   template:
     spec:
+      imagePullSecrets:
+        # Create once: kubectl create secret docker-registry gitlab-registry-nrp-pull \
+        #   --docker-server=gitlab-registry.nrp-nautilus.io --docker-username=... --docker-password=...
+        # Or change this name to match an existing registry pull secret in your namespace.
+        - name: gitlab-registry-nrp-pull
       serviceAccountName: default
       automountServiceAccountToken: false
       restartPolicy: Never
