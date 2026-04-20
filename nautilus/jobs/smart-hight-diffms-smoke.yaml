@@ -103,7 +103,7 @@ spec:
       volumes:
         - name: user-pvc
           persistentVolumeClaim:
-            claimName: andre-smart-hight-pvc
+            claimName: jonathanle-spectre
         - name: smart-datasets
           persistentVolumeClaim:
             claimName: smart-datasets

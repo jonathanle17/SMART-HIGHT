@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: andre-smart-hight-diffms-full
+  name: jonathanle-spectre
 spec:
   backoffLimit: 1
   ttlSecondsAfterFinished: 259200
@@ -105,7 +105,7 @@ spec:
       volumes:
         - name: user-pvc
           persistentVolumeClaim:
-            claimName: andre-smart-hight-pvc
+            claimName: jonathanle-spectre
         - name: smart-datasets
           persistentVolumeClaim:
             claimName: smart-datasets
