@@ -1,7 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: jonathanle-spectre
+  name: jonathanle-spectre-full
+  namespace: guru-research
 spec:
   backoffLimit: 1
   ttlSecondsAfterFinished: 259200

@@ -1,7 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: andre-smart-hight-diffms-smoke
+  name: jonathanle-spectre-smoke
+  namespace: guru-research
 spec:
   backoffLimit: 0
   ttlSecondsAfterFinished: 86400
