@@ -12,6 +12,8 @@ This folder lets you run the full pipeline on Nautilus with Kubernetes Jobs:
 - Access to Nautilus/NRP with `kubectl` configured to `guru-research` namespace.
 - The shared `smart-datasets` PVC available with `MoonshotDatasetv3.zip`.
 - Your private PVC created from `volumes/andre-smart-hight-pvc.yaml`.
+- A **docker-registry pull secret** for `gitlab-registry.nrp-nautilus.io` (see below), unless your namespace already provides one (then set `imagePullSecrets` in the job YAML to that secret name).
+- If `SMART_HIGHT_REPO` is an **SSH** URL (`git@github.com:...`), a deploy key (or similar) on the PVC at `/root/gurusmart/.ssh/id_rsa`, or mounted at `/ssh/id_rsa` (add a `Secret` volume + `volumeMount` for `/ssh` if you use that layout).
 
 ## One-time setup
 
@@ -33,6 +35,30 @@ Update at minimum:
 - `SMART_HIGHT_REPO` (your repo URL)
 - `SMART_HIGHT_BRANCH` (your branch)
 - `MOONSHOT_DATASET_ZIP` if your dataset zip differs
+- `spec.template.spec.imagePullSecrets[0].name` if your registry secret uses a different name than `gitlab-registry-nrp-pull`
+
+### Registry pull secret (private container image)
+
+The job image is hosted on GitLab’s NRP registry. Create a pull secret once in your namespace (use credentials your project issued for that registry; do not commit them to git):
+
+```bash
+kubectl create secret docker-registry gitlab-registry-nrp-pull \
+  --docker-server=gitlab-registry.nrp-nautilus.io \
+  --docker-username='<username-or-token-name>' \
+  --docker-password='<password-or-token>' \
+  --namespace=guru-research
+```
+
+If you already have a secret (for example from cluster onboarding), edit both job manifests so `imagePullSecrets` references that name instead of `gitlab-registry-nrp-pull`.
+
+### Git SSH key layout
+
+The job copies `id_rsa` from, in order:
+
+1. `/root/gurusmart/.ssh/` on your user PVC (recommended), or
+2. `/ssh/` if you mount a key there (add a `volume` from a `Secret` and `volumeMount` at `mountPath: /ssh`).
+
+If `SMART_HIGHT_REPO` is SSH and no key is found, the container exits immediately with a clear error instead of failing later at `git clone`. To avoid SSH keys entirely, switch `SMART_HIGHT_REPO` to an HTTPS URL and supply a token via a Kubernetes `Secret` (not implemented in these manifests by default).
 
 ## Run smoke test
 
