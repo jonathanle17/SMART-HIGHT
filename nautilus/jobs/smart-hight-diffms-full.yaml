@@ -12,7 +12,7 @@ spec:
         # Create once: kubectl create secret docker-registry gitlab-registry-nrp-pull \
         #   --docker-server=gitlab-registry.nrp-nautilus.io --docker-username=... --docker-password=...
         # Or change this name to match an existing registry pull secret in your namespace.
-        - name: gitlab-registry-nrp-pull
+        - name: gitlab-auth
       serviceAccountName: default
       automountServiceAccountToken: false
       restartPolicy: Never
