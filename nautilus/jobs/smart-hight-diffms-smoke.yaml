@@ -67,6 +67,8 @@ spec:
               value: smoke
             - name: MOONSHOT_DATASET_ZIP
               value: MoonshotDatasetv3.zip
+            - name: DATASET_DIR
+              value: /workspace/datasets
             - name: SMART_HIGHT_REPO
               value: git@github.com:jonathanle17/SMART-HIGHT.git
             - name: SMART_HIGHT_BRANCH
@@ -93,7 +95,7 @@ spec:
           volumeMounts:
             - mountPath: /root/gurusmart
               name: user-pvc
-            - mountPath: /workspace/datasets
+            - mountPath: /root/datasets
               name: smart-datasets
             - mountPath: /workspace
               name: data-unzip
