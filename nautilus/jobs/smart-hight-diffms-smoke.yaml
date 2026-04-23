@@ -93,7 +93,7 @@ spec:
           volumeMounts:
             - mountPath: /root/gurusmart
               name: user-pvc
-            - mountPath: /root/datasets
+            - mountPath: /workspace/datasets
               name: smart-datasets
             - mountPath: /workspace
               name: data-unzip
