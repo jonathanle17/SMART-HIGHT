@@ -32,22 +32,6 @@ spec:
           args:
             - |
               set -euo pipefail
-              if ! command -v python >/dev/null 2>&1; then
-                if command -v pixi >/dev/null 2>&1; then
-                  eval "$(pixi shell-hook)"
-                fi
-              fi
-              if ! command -v python >/dev/null 2>&1 && [ -f /opt/conda/etc/profile.d/conda.sh ]; then
-                . /opt/conda/etc/profile.d/conda.sh
-                conda activate base || true
-              fi
-              if ! command -v python >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
-                export PYTHON_BIN=python3
-              fi
-              if ! command -v python >/dev/null 2>&1 && [ "${PYTHON_BIN:-python}" = "python" ]; then
-                echo "[ERROR] No python executable found in PATH after pixi/conda activation." >&2
-                exit 1
-              fi
               mkdir -p ~/.ssh
               if [ -f /root/gurusmart/.ssh/id_rsa ]; then
                 cp -f /root/gurusmart/.ssh/id_rsa ~/.ssh/id_rsa
@@ -77,6 +61,37 @@ spec:
                 export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
                 git clone --branch "${SMART_HIGHT_BRANCH}" "${SMART_HIGHT_REPO}" /code/SMART-HIGHT
               fi
+
+              cd /code/SMART-HIGHT
+
+              # --- 1. CONFIGURE AND INSTALL PIXI ---
+              if command -v pixi >/dev/null 2>&1; then
+                echo "Configuring Pixi for Linux..."
+
+                # Force pixi to handle the environment for the cluster platform
+                pixi project platform add linux-64 || true
+
+                echo "Installing Python 3.9 environment..."
+                pixi install
+
+                echo "Activating Environment..."
+                eval "$(pixi shell-hook)"
+
+                # --- 2. CREATE THE PYTHON3.9 ALIAS ---
+                # Find where the pixi python binary lives and link it to 'python3.9'
+                # so the DiffMS check passes.
+                PYTHON_PATH="$(which python)"
+                if [[ -n "${PYTHON_PATH}" ]]; then
+                  # Create a link in a writable directory in the PATH
+                  mkdir -p /tmp/bin
+                  ln -sf "${PYTHON_PATH}" /tmp/bin/python3.9
+                  export PATH="/tmp/bin:${PATH}"
+                fi
+              fi
+
+              # Verification for logs
+              echo "Active Python version: $(python --version)"
+              echo "Checking for python3.9 binary: $(which python3.9 || true)"
               bash /code/SMART-HIGHT/nautilus/scripts/run_smart_hight_diffms_pipeline.sh
           env:
             - name: PIPELINE_MODE
