@@ -1,0 +1,11 @@
+[workspace]
+authors = ["jonathanle17 <jonathan.le@mrjaffesclass.com>"]
+channels = ["conda-forge"]
+name = "SMART-HIGHT"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = ">=3.14.4,<3.15"

@@ -68,7 +68,7 @@ spec:
             - name: MOONSHOT_DATASET_ZIP
               value: MoonshotDatasetv3.zip
             - name: DATASET_DIR
-              value: /workspace/datasets
+              value: /root/datasets
             - name: SMART_HIGHT_REPO
               value: git@github.com:jonathanle17/SMART-HIGHT.git
             - name: SMART_HIGHT_BRANCH
