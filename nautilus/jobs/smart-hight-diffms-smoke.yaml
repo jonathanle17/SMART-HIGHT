@@ -40,16 +40,10 @@ spec:
                 fi
                 conda activate diffms39
                 export PYTHON_BIN=python
-              elif command -v pixi >/dev/null 2>&1; then
-                eval "$(pixi shell-hook)"
-                if ! command -v python >/dev/null 2>&1; then
-                  echo "[ERROR] pixi shell activated but python is still unavailable." >&2
-                  exit 1
-                fi
               elif command -v python3.9 >/dev/null 2>&1; then
                 export PYTHON_BIN=python3.9
               else
-                echo "[ERROR] Could not activate a Python 3.9 runtime (conda/pixi/python3.9 missing)." >&2
+                echo "[ERROR] Could not activate a Python 3.9 runtime (conda/python3.9 missing)." >&2
                 exit 1
               fi
               mkdir -p ~/.ssh
