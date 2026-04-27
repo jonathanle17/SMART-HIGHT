@@ -32,6 +32,12 @@ spec:
           args:
             - |
               set -euo pipefail
+
+              # --- 1. SYSTEM DEPENDENCIES ---
+              # Fixed: Missing libXrender for RDKit
+              apt-get update && apt-get install -y libxrender1 libxext6 libsm6 libgl1-mesa-glx
+
+              # --- 2. SETUP SSH & CLONE ---
               mkdir -p ~/.ssh
               if [ -f /root/gurusmart/.ssh/id_rsa ]; then
                 cp -f /root/gurusmart/.ssh/id_rsa ~/.ssh/id_rsa
@@ -64,34 +70,22 @@ spec:
 
               cd /code/SMART-HIGHT
 
-              # --- 1. CONFIGURE AND INSTALL PIXI ---
+              # --- 3. PIXI & PYTHON 3.9 SETUP ---
               if command -v pixi >/dev/null 2>&1; then
-                echo "Configuring Pixi for Linux..."
-
-                # Force pixi to handle the environment for the cluster platform
-                pixi project platform add linux-64 || true
-
-                echo "Installing Python 3.9 environment..."
                 pixi install
-
-                echo "Activating Environment..."
                 eval "$(pixi shell-hook)"
 
-                # --- 2. CREATE THE PYTHON3.9 ALIAS ---
-                # Find where the pixi python binary lives and link it to 'python3.9'
-                # so the DiffMS check passes.
-                PYTHON_PATH="$(which python)"
-                if [[ -n "${PYTHON_PATH}" ]]; then
-                  # Create a link in a writable directory in the PATH
-                  mkdir -p /tmp/bin
-                  ln -sf "${PYTHON_PATH}" /tmp/bin/python3.9
-                  export PATH="/tmp/bin:${PATH}"
-                fi
+                # Fixed: Ensure pip exists in the 3.9 env
+                python -m ensurepip --default-pip || true
+
+                # Fixed: Create python3.9 alias for DiffMS check
+                mkdir -p /tmp/bin
+                ln -sf "$(which python)" /tmp/bin/python3.9
+                export PATH="/tmp/bin:$PATH"
               fi
 
-              # Verification for logs
-              echo "Active Python version: $(python --version)"
-              echo "Checking for python3.9 binary: $(which python3.9 || true)"
+              # --- 4. RUN PIPELINE ---
+              echo "Starting pipeline with Python $(python --version)"
               bash /code/SMART-HIGHT/nautilus/scripts/run_smart_hight_diffms_pipeline.sh
           env:
             - name: PIPELINE_MODE
