@@ -32,6 +32,22 @@ spec:
           args:
             - |
               set -euo pipefail
+              if ! command -v python >/dev/null 2>&1; then
+                if command -v pixi >/dev/null 2>&1; then
+                  eval "$(pixi shell-hook)"
+                fi
+              fi
+              if ! command -v python >/dev/null 2>&1 && [ -f /opt/conda/etc/profile.d/conda.sh ]; then
+                . /opt/conda/etc/profile.d/conda.sh
+                conda activate base || true
+              fi
+              if ! command -v python >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+                export PYTHON_BIN=python3
+              fi
+              if ! command -v python >/dev/null 2>&1 && [ "${PYTHON_BIN:-python}" = "python" ]; then
+                echo "[ERROR] No python executable found in PATH after pixi/conda activation." >&2
+                exit 1
+              fi
               mkdir -p ~/.ssh
               if [ -f /root/gurusmart/.ssh/id_rsa ]; then
                 cp -f /root/gurusmart/.ssh/id_rsa ~/.ssh/id_rsa
@@ -78,7 +94,7 @@ spec:
             - name: DIFFMS_BRANCH
               value: master
             - name: PYTHON_BIN
-              value: python
+              value: python3
             - name: GPU_COUNT
               value: "0"
             - name: ARTIFACT_ROOT
