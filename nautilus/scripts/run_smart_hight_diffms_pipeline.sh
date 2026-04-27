@@ -54,7 +54,29 @@ echo "[INFO] Installing runtime dependencies"
 "${PYTHON_BIN}" -m pip install --upgrade pip
 "${PYTHON_BIN}" -m pip install numpy scipy pandas matplotlib rdkit
 "${PYTHON_BIN}" -m pip install torch-geometric pytorch-lightning hydra-core
-"${PYTHON_BIN}" -m pip install -e "${DIFFMS_DIR}"
+
+# DiffMS requires Python 3.9; keep earlier pipeline steps on PYTHON_BIN.
+DIFFMS_PYTHON=""
+if command -v conda >/dev/null 2>&1; then
+  # shellcheck disable=SC1091
+  . "$(conda info --base)/etc/profile.d/conda.sh"
+  if ! conda env list | awk '{print $1}' | grep -xq "diffms"; then
+    echo "[INFO] Creating Conda env 'diffms' (python=3.9, rdkit=2024.09.4)"
+    conda create -y -c conda-forge -n diffms rdkit=2024.09.4 python=3.9
+  fi
+  conda activate diffms
+  DIFFMS_PYTHON="python"
+elif command -v python3.9 >/dev/null 2>&1; then
+  DIFFMS_PYTHON="python3.9"
+else
+  echo "[ERROR] DiffMS requires Python 3.9, but no conda env support or python3.9 binary was found." >&2
+  echo "[ERROR] Keep image/auth/dataset setup unchanged; add conda (recommended) or python3.9 to the image." >&2
+  exit 1
+fi
+
+"${DIFFMS_PYTHON}" -m pip install --upgrade pip
+"${DIFFMS_PYTHON}" -m pip install torch==2.3.1 --index-url https://download.pytorch.org/whl/cu118
+"${DIFFMS_PYTHON}" -m pip install -e "${DIFFMS_DIR}"
 
 cd "${SMART_HIGHT_DIR}"
 
@@ -111,7 +133,7 @@ echo "[INFO] Merging bridge artifacts"
 echo "[INFO] Running true DiffMS comparison"
 COMPARE_ARGS=(
   --diffms-root "${DIFFMS_DIR}"
-  --python "${PYTHON_BIN}"
+  --python "${DIFFMS_PYTHON}"
   --bridge-jsonl "${ART_DIR}/diffms_bridge_all.jsonl"
   --bridge-npz "${ART_DIR}/diffms_bridge_all_tokens.npz"
   --dataset msg
