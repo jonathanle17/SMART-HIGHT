@@ -32,20 +32,24 @@ spec:
           args:
             - |
               set -euo pipefail
-              if ! command -v python >/dev/null 2>&1; then
-                if command -v pixi >/dev/null 2>&1; then
-                  eval "$(pixi shell-hook)"
-                fi
-              fi
-              if ! command -v python >/dev/null 2>&1 && [ -f /opt/conda/etc/profile.d/conda.sh ]; then
+              if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
                 . /opt/conda/etc/profile.d/conda.sh
                 conda activate base || true
-              fi
-              if ! command -v python >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
-                export PYTHON_BIN=python3
-              fi
-              if ! command -v python >/dev/null 2>&1 && [ "${PYTHON_BIN:-python}" = "python" ]; then
-                echo "[ERROR] No python executable found in PATH after pixi/conda activation." >&2
+                if ! conda env list | awk '{print $1}' | grep -xq "diffms39"; then
+                  conda create -y -n diffms39 python=3.9
+                fi
+                conda activate diffms39
+                export PYTHON_BIN=python
+              elif command -v pixi >/dev/null 2>&1; then
+                eval "$(pixi shell-hook)"
+                if ! command -v python >/dev/null 2>&1; then
+                  echo "[ERROR] pixi shell activated but python is still unavailable." >&2
+                  exit 1
+                fi
+              elif command -v python3.9 >/dev/null 2>&1; then
+                export PYTHON_BIN=python3.9
+              else
+                echo "[ERROR] Could not activate a Python 3.9 runtime (conda/pixi/python3.9 missing)." >&2
                 exit 1
               fi
               mkdir -p ~/.ssh
@@ -94,7 +98,7 @@ spec:
             - name: DIFFMS_BRANCH
               value: master
             - name: PYTHON_BIN
-              value: python3
+              value: python
             - name: GPU_COUNT
               value: "2"
             - name: ARTIFACT_ROOT
