@@ -1,6 +1,8 @@
 [workspace]
 authors = ["jonathanle17 <jonathan.le@mrjaffesclass.com>"]
 channels = ["conda-forge", "pytorch", "nvidia"]
+# Allow CUDA metapackages from nvidia alongside conda-forge (strict excludes them).
+channel-priority = "disabled"
 name = "SMART-HIGHT"
 platforms = ["linux-64"]
 version = "0.1.0"
