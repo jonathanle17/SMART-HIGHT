@@ -2,6 +2,6 @@ command: ["/bin/bash", "-lc"]
           args:
             - |
               mkdir -p ~/.ssh && cp /root/gurusmart/.ssh/id_rsa ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
-              git clone -b ${main} ${https://github.com/jonathanle17/SMART-HIGHT} /code/SMART-HIGHT || cd /code/SMART-HIGHT
-              git clone -b ${master} ${https://github.com/coleygroup/DiffMS} /code/DiffMS || true
+              git clone -b main git@github.com:jonathanle17/SMART-HIGHT.git /code/SMART-HIGHT || cd /code/SMART-HIGHT
+              git clone -b master git@github.com:coleygroup/DiffMS.git /code/DiffMS || true
               pixi run smoke
