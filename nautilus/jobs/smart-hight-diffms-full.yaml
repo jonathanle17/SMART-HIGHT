@@ -1,152 +1,29 @@
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: jonathanle-spectre-full
-  namespace: guru-research
-spec:
-  backoffLimit: 1
-  ttlSecondsAfterFinished: 259200
-  template:
-    spec:
-      imagePullSecrets:
-        # Create once: kubectl create secret docker-registry gitlab-registry-nrp-pull \
-        #   --docker-server=gitlab-registry.nrp-nautilus.io --docker-username=... --docker-password=...
-        # Or change this name to match an existing registry pull secret in your namespace.
-        - name: gitlab-auth
-      serviceAccountName: default
-      automountServiceAccountToken: false
-      restartPolicy: Never
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
-      containers:
-        - name: trainer
-          image: gitlab-registry.nrp-nautilus.io/a8tong/smart-moonshot/pixi-cuda:12.8
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
-            capabilities:
-              drop:
-                - ALL
+env:
+            - name: PIPELINE_MODE
+              value: "full"  # This tells the script to run the full dataset
+            - name: SMART_HIGHT_REPO
+              value: "git@github.com:jonathanle17/SMART-HIGHT.git"
+            - name: SMART_HIGHT_BRANCH
+              value: "main"
+            - name: DIFFMS_REPO
+              value: "https://github.com/coleygroup/DiffMS.git"
+            - name: DIFFMS_BRANCH
+              value: "master"
+            - name: DATASET_DIR
+              value: "/root/datasets"
+            - name: ARTIFACT_ROOT
+              value: "/root/gurusmart/experiments"
           command: ["/bin/bash", "-lc"]
           args:
             - |
-              set -euo pipefail
-              mkdir -p ~/.ssh
-              if [ -f /root/gurusmart/.ssh/id_rsa ]; then
-                cp -f /root/gurusmart/.ssh/id_rsa ~/.ssh/id_rsa
-                if [ -f /root/gurusmart/.ssh/id_rsa.pub ]; then
-                  cp -f /root/gurusmart/.ssh/id_rsa.pub ~/.ssh/id_rsa.pub
-                fi
-              elif [ -f /ssh/id_rsa ]; then
-                cp -f /ssh/id_rsa ~/.ssh/id_rsa
-                if [ -f /ssh/id_rsa.pub ]; then
-                  cp -f /ssh/id_rsa.pub ~/.ssh/id_rsa.pub
-                fi
-              fi
-              if [ -f ~/.ssh/id_rsa ]; then
-                chmod 600 ~/.ssh/id_rsa
-                if [ -f ~/.ssh/id_rsa.pub ]; then
-                  chmod 644 ~/.ssh/id_rsa.pub
-                fi
-              fi
-              needs_ssh_key=0
-              case "${SMART_HIGHT_REPO}" in git@*|ssh://*) needs_ssh_key=1 ;; esac
-              if [ "${needs_ssh_key}" -eq 1 ] && [ ! -f ~/.ssh/id_rsa ]; then
-                echo "[ERROR] SMART_HIGHT_REPO uses SSH but no private key was found." >&2
-                echo "[ERROR] Put id_rsa on your PVC at /root/gurusmart/.ssh/id_rsa or mount it at /ssh/id_rsa." >&2
-                exit 1
-              fi
-              if [ ! -d /code/SMART-HIGHT ]; then
-                export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
-                git clone --branch "${SMART_HIGHT_BRANCH}" "${SMART_HIGHT_REPO}" /code/SMART-HIGHT
-              fi
+              # 1. Simple SSH Setup (Same as Smoke)
+              mkdir -p ~/.ssh && cp /root/gurusmart/.ssh/id_rsa ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+              ssh-keyscan github.com >> ~/.ssh/known_hosts
 
+              # 2. Simple Clone Logic (Fixed syntax)
+              git clone -b ${SMART_HIGHT_BRANCH} ${SMART_HIGHT_REPO} /code/SMART-HIGHT || cd /code/SMART-HIGHT
+              git clone -b ${DIFFMS_BRANCH} ${DIFFMS_REPO} /code/DiffMS || true
+
+              # 3. Use Pixi to handle the environment and run (Same as Smoke)
               cd /code/SMART-HIGHT
-
-              # --- 1. CONFIGURE AND INSTALL PIXI ---
-              if command -v pixi >/dev/null 2>&1; then
-                echo "Configuring Pixi for Linux..."
-
-                # Force pixi to handle the environment for the cluster platform
-                pixi project platform add linux-64 || true
-
-                echo "Installing Python 3.9 environment..."
-                pixi install
-
-                echo "Activating Environment..."
-                eval "$(pixi shell-hook)"
-
-                # --- 2. CREATE THE PYTHON3.9 ALIAS ---
-                # Find where the pixi python binary lives and link it to 'python3.9'
-                # so the DiffMS check passes.
-                PYTHON_PATH="$(which python)"
-                if [[ -n "${PYTHON_PATH}" ]]; then
-                  # Create a link in a writable directory in the PATH
-                  mkdir -p /tmp/bin
-                  ln -sf "${PYTHON_PATH}" /tmp/bin/python3.9
-                  export PATH="/tmp/bin:${PATH}"
-                fi
-              fi
-
-              # Verification for logs
-              echo "Active Python version: $(python --version)"
-              echo "Checking for python3.9 binary: $(which python3.9 || true)"
-              bash /code/SMART-HIGHT/nautilus/scripts/run_smart_hight_diffms_pipeline.sh
-          env:
-            - name: PIPELINE_MODE
-              value: full
-            - name: MOONSHOT_DATASET_ZIP
-              value: MoonshotDatasetv3.zip
-            - name: DATASET_DIR
-              value: /root/datasets
-            - name: SMART_HIGHT_REPO
-              value: git@github.com:jonathanle17/SMART-HIGHT.git
-            - name: SMART_HIGHT_BRANCH
-              value: main
-            - name: DIFFMS_REPO
-              value: https://github.com/coleygroup/DiffMS.git
-            - name: DIFFMS_BRANCH
-              value: master
-            - name: PYTHON_BIN
-              value: python3
-            - name: GPU_COUNT
-              value: "2"
-            - name: ARTIFACT_ROOT
-              value: /root/gurusmart/experiments
-          resources:
-            limits:
-              memory: 64Gi
-              cpu: "16"
-              nvidia.com/gpu: "2"
-              ephemeral-storage: 600Gi
-            requests:
-              memory: 64Gi
-              cpu: "16"
-              nvidia.com/gpu: "2"
-              ephemeral-storage: 600Gi
-          volumeMounts:
-            - mountPath: /root/gurusmart
-              name: user-pvc
-            - mountPath: /root/datasets
-              name: smart-datasets
-            - mountPath: /workspace
-              name: data-unzip
-            - mountPath: /dev/shm
-              name: dshm
-            - mountPath: /code
-              name: code-workdir
-      volumes:
-        - name: user-pvc
-          persistentVolumeClaim:
-            claimName: jonathanle-spectre
-        - name: smart-datasets
-          persistentVolumeClaim:
-            claimName: smart-datasets
-        - name: dshm
-          emptyDir:
-            medium: Memory
-        - name: data-unzip
-          emptyDir: {}
-        - name: code-workdir
-          emptyDir: {}
+              pixi run smoke

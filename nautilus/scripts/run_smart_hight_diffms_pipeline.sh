@@ -8,8 +8,8 @@ PYTHON_BIN="python"
 DIFFMS_PYTHON="python"
 
 # No more manual installs here! Pixi handles it.
-cd "/code/DiffMS"
+cd "${DIFFMS_DIR}"
 ${PYTHON_BIN} -m pip install -e .
 
-cd "/code/SMART-HIGHT"
+cd "${SMART_HIGHT_DIR}"
 # ... (Rest of the pipeline execution) ...
