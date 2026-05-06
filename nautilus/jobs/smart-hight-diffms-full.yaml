@@ -1,6 +1,21 @@
-env:
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: jonathanle-spectre-full
+  namespace: guru-research
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      imagePullSecrets:
+        - name: gitlab-auth
+      restartPolicy: Never
+      containers:
+        - name: trainer
+          image: gitlab-registry.nrp-nautilus.io/a8tong/smart-moonshot/pixi-cuda:12.8
+          env:
             - name: PIPELINE_MODE
-              value: "full"  # This tells the script to run the full dataset
+              value: "full"
             - name: SMART_HIGHT_REPO
               value: "git@github.com:jonathanle17/SMART-HIGHT.git"
             - name: SMART_HIGHT_BRANCH
@@ -9,21 +24,39 @@ env:
               value: "https://github.com/coleygroup/DiffMS.git"
             - name: DIFFMS_BRANCH
               value: "master"
-            - name: DATASET_DIR
-              value: "/root/datasets"
-            - name: ARTIFACT_ROOT
-              value: "/root/gurusmart/experiments"
           command: ["/bin/bash", "-lc"]
           args:
             - |
-              # 1. Simple SSH Setup (Same as Smoke)
+              # 1. SSH Setup (Standard from your working smoke test)
               mkdir -p ~/.ssh && cp /root/gurusmart/.ssh/id_rsa ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
               ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-              # 2. Simple Clone Logic (Fixed syntax)
+              # 2. Simplified Clone using variables from 'env' above
               git clone -b ${SMART_HIGHT_BRANCH} ${SMART_HIGHT_REPO} /code/SMART-HIGHT || cd /code/SMART-HIGHT
               git clone -b ${DIFFMS_BRANCH} ${DIFFMS_REPO} /code/DiffMS || true
 
-              # 3. Use Pixi to handle the environment and run (Same as Smoke)
+              # 3. Run the new Pixi task
               cd /code/SMART-HIGHT
-              pixi run smoke
+              pixi run full
+          resources:
+            limits:
+              nvidia.com/gpu: "2"
+              memory: 64Gi
+              cpu: "16"
+              ephemeral-storage: 600Gi
+          volumeMounts:
+            - mountPath: /root/gurusmart
+              name: user-pvc
+            - mountPath: /root/datasets
+              name: smart-datasets
+            - mountPath: /code
+              name: code-workdir
+      volumes:
+        - name: user-pvc
+          persistentVolumeClaim:
+            claimName: jonathanle-spectre
+        - name: smart-datasets
+          persistentVolumeClaim:
+            claimName: smart-datasets
+        - name: code-workdir
+          emptyDir: {}
