@@ -24,6 +24,7 @@ pip = "*"
 [tasks]
 # Define the smoke test as a task to simplify the pod command
 smoke = "bash nautilus/scripts/run_smart_hight_diffms_pipeline.sh"
+full = "bash nautilus/scripts/run_smart_hight_diffms_pipeline.sh"
 
 [target.linux-64.dependencies]
 # Hardware-specific dependencies can go here if needed

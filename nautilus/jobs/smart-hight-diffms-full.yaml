@@ -27,22 +27,27 @@ spec:
           command: ["/bin/bash", "-lc"]
           args:
             - |
-              # 1. SSH Setup (Standard from your working smoke test)
+              # 1. SSH Setup
               mkdir -p ~/.ssh && cp /root/gurusmart/.ssh/id_rsa ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
               ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-              # 2. Simplified Clone using variables from 'env' above
+              # 2. Clone Repos
               git clone -b ${SMART_HIGHT_BRANCH} ${SMART_HIGHT_REPO} /code/SMART-HIGHT || cd /code/SMART-HIGHT
               git clone -b ${DIFFMS_BRANCH} ${DIFFMS_REPO} /code/DiffMS || true
 
-              # 3. Run the new Pixi task
+              # 3. Run Full Task
               cd /code/SMART-HIGHT
               pixi run full
           resources:
             limits:
-              nvidia.com/gpu: "2"
-              memory: 64Gi
               cpu: "16"
+              memory: 64Gi
+              nvidia.com/gpu: "2"
+              ephemeral-storage: 600Gi
+            requests:
+              cpu: "16"
+              memory: 64Gi
+              nvidia.com/gpu: "2"
               ephemeral-storage: 600Gi
           volumeMounts:
             - mountPath: /root/gurusmart
