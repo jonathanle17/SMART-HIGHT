@@ -11,7 +11,7 @@ SMART_HIGHT_DIR="${SMART_HIGHT_DIR:-/code/SMART-HIGHT}"
 
 # No more manual installs here! Pixi handles it.
 cd "${DIFFMS_DIR}"
-${PYTHON_BIN} -km pip install -e .
+${PYTHON_BIN} -m pip install -e .
 
 cd "${SMART_HIGHT_DIR}"
 # ... (Rest of the pipeline execution) ...
